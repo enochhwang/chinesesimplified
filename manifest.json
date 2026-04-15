@@ -1,0 +1,21 @@
+{
+  "name": "707颂赞诗歌",
+  "short_name": "707颂赞诗歌",
+  "description": "完整的基督复临安息日会707颂赞诗歌",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#A25536",
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

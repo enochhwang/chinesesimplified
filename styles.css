@@ -1,0 +1,803 @@
+body {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background-color: #333; /* Dark background for professional look */
+  overflow: hidden; /* Prevents whole-page scrolling */
+  font-family: system-ui, sans-serif;
+}
+
+/*******************************************************************/
+/*  Menu bar buttons */
+#menu-bar {
+  position: fixed; /* Keep it locked at the top */
+  top: 0;
+  left: 0;  
+  width: 100%;
+  height: 60px; 
+  flex-shrink: 0; /* don't change height. Stay exactly at 60px */
+  background-color: #0033ff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-sizing: border-box;
+  padding-right: 10px;
+  padding-left: 10px;
+  z-index: 1000;
+}
+
+#menuLeft {
+  display: flex;
+  align-items: center;
+}
+
+#menuRight-original {
+  display: flex;
+  gap: 16px;
+}
+
+#menuRight {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-grow: 1; /* Ensure the right side of the bar fills the space */
+}
+
+#nav-icons {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end; /* Keeps icons to the right */
+  gap: 16px;                 /* Match the gap from your original #menuRight */
+  flex-grow: 1;              /* Allows it to occupy the available space */
+}
+
+.menuButtons {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  background-color: #0033ff;
+}
+
+#searchInput::placeholder {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+#search-bar-container {
+  display: none; /* Hidden by default */
+  transition: all 0.3s ease;
+}
+
+
+/*******************************************************************/
+/*  More (three dots) Popup Menu */
+.moreMenuOverlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 2000; /* Above searchList and sidebars */
+    background: transparent; /* Invisible backdrop to catch clicks for closing */
+}
+
+.moreMenuContent {
+    position: absolute;
+    right: 10px; /* Aligned to the right edge */
+    top: 60px;   /* Directly below the menu bar */
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    width: 200px;
+    overflow: hidden;
+}
+
+.more-item {
+    display: flex;
+    align-items: center;
+    padding: 12px 16px;
+    gap: 12px;
+    cursor: pointer;
+    transition: background 0.2s;
+    border-bottom: none; /* 1px solid #eee; */
+}
+
+.more-item svg {
+  fill: #0033ff; /* This will make the gear, share, etc., match your menu bar */
+  /* Control the actual size of the SVG paths */
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0; /* Ensure they don't grow to fill the container */
+  opacity: 0.8;
+}
+
+.more-item span {
+  font-size: 16px;
+  color: black;
+  white-space: nowrap; /* Prevent text from wrapping weirdly */
+}
+
+
+/*******************************************************************/
+/* Songsheet */
+.songsheet-container {
+  flex-grow: 1;
+  position: fixed;
+  top: 60px;
+  left: 0;
+  right: 0;
+  bottom: 0;        /* This ensures it ends at the bottom of the screen */
+  width: 100%;
+  height: auto;     /* Changed from 100% to let bottom: 0 govern height */
+  z-index: 400;
+  overflow: hidden;
+}
+
+.swiper {
+  width: 100%;
+  height: 100%;
+  align-items: flex-start;
+  touch-action: none; /* Let Swiper and JS script handle all touches */
+}
+
+.swiper-slide {
+  overflow: hidden;
+  background: #fff;
+}
+
+.swiper-zoom-container > img {
+  width: 100%;
+  height: 100%; /* this will align vertically to the top. If it is auto then it will be centered */
+  object-fit: contain;
+  object-position: top;
+  user-select: none;
+  -webkit-touch-callout: none; /* Prevents the callout menu */
+  -webkit-user-select: none;   /* Prevents text/image selection */
+  -webkit-user-drag: none;     /* Prevents the 'ghost' image drag effect */
+}
+
+/* Landscape: Re-enable scrolling and force width */
+@media (orientation: landscape) {
+  /* Allow the container to scroll vertically */
+  .songsheet-container {
+    overflow-y: auto !important;
+  }
+
+  /* Force Swiper and slides to allow content to dictate height */
+  .swiper, .swiper-slide, .swiper-zoom-container {
+    height: auto !important;
+    display: block !important;
+    touch-action: pan-y;
+  }
+
+  .swiper-zoom-container > img {
+    width: 100vw !important; /* Force image to fill horizontal width */
+    height: auto !important; /* Maintain aspect ratio */
+    display: block;
+    object-fit: contain;
+  }
+  
+/* Force lists and sidebars to stay visible at the top of the screen */
+  #numericList, #alphabeticList, #bookmarkList-container, #searchList, .fast-scroll-sidebar {
+    position: fixed !important; 
+    top: 60px !important; /* Match your menu bar height */
+    bottom: 0 !important;
+    height: calc(100vh - 60px) !important;
+    padding-bottom: 100px !important; 
+    box-sizing: border-box;
+  }
+
+  /* Ensure the sidebar stays on the far right of the screen, not the container */
+  .fast-scroll-sidebar {
+    right: 0 !important;
+    left: auto !important;
+  }
+
+  .fast-scroll-item {
+    font-size: 9px !important; /* Smaller text for tight spaces */
+    line-height: 1;
+    padding: 2px 0;
+  }
+  
+}
+
+
+/*******************************************************************/
+/*  Numeric, Alphabetic, and Search lists */
+#numericList, #alphabeticList {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 30px;      /* Leaves room for the sidebar */
+  bottom: 0;        /* Ensures the list stretches to the bottom of the container */
+  width: auto;      /* Changed from calc(100% - 30px) for better stability */
+  height: auto;     /* Changed from 100% */
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background-color: white;
+  z-index: 500;
+  padding: 10px;
+  /* padding-bottom: 40px; Extra padding so the last item isn't tight against the edge */
+  box-sizing: border-box;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 16px;
+}
+
+#searchList {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  width: auto;
+  /*
+  will set these in JS to adjust the height of the list to accomodate the soft keyboard that appears
+  bottom: 0;
+  height: auto;
+  */
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background-color: white;
+  z-index: 500;
+  padding: 10px;
+  box-sizing: border-box;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 16px;
+}
+
+.list-item {
+  padding: 15px 6px;
+  border-bottom: 1px solid #eee;
+  cursor: pointer;
+  
+  touch-action: pan-y;          /* ALLOWS vertical scrolling */
+  user-select: none;            /* Prevents text selection highlighting */
+  -webkit-user-select: none;    /* Required for iOS/Chrome mobile */
+  -webkit-touch-callout: none;  /* Specifically kills the long-press context menu */
+  -webkit-tap-highlight-color: transparent; /* Removes the tap flicker on mobile */
+}
+
+.list-item:last-child {
+    border-bottom: none;
+}
+
+.list-item:hover {
+  background-color: #f0f0f0;
+}
+
+
+/*******************************************************************/
+/*  Fast Scroll List Sidebar */
+.fast-scroll-sidebar {
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	right: 0;
+	width: 30px;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-items: center;
+	z-index: 500;
+  background-color: white;
+	user-select: none;
+	-webkit-user-select: none;
+	touch-action: none; /* disable browser scrolling */
+}
+
+.fast-scroll-item {
+	flex: 1;
+	width: 100%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 10px;
+  color: #0033ff;
+	font-weight: bold;
+	cursor: pointer;
+}
+
+.fast-scroll-bubble {
+	position: absolute; /* Relative to .songsheet-container */
+  top: 0;
+	right: 50px; /* To the left of the sidebar */
+	width: 60px;
+	height: 60px;
+	background-color: rgba(00, 51, 255, 0.9); /* Blue */
+	color: white;
+	border-radius: 50%; /* Circle */
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	font-size: 32px;
+	font-weight: bold;
+	pointer-events: none; /* Let touches pass through */
+	z-index: 600;
+	box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.3);
+	/* Initially hidden */
+	opacity: 0;
+	transition: opacity 0.2s;
+}
+.fast-scroll-bubble.show {
+	opacity: 1;
+}
+
+
+/*******************************************************************/
+/*  Add Bookmark Popup Window stuff */
+.addBookmarkMenuOverlay {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.5);
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  pointer-events: auto;
+  user-select: none; /* disable text selection inside popup */
+}
+
+.addBookmarkControls {
+  background: white;
+  border-radius: 10px;
+  padding: 20px;
+  width: 250px;
+  text-align: center;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+}
+
+.addBookmarkControls h2 {
+  margin: 0 0 10px;
+  font-size: 18px;
+}
+
+.addBookmarkControls p {
+  margin: 0 0 15px;
+  font-size: 14px;
+  color: #444;
+}
+
+.addBookmarkControls button {
+  display: block;
+  width: 100%;
+  padding: 10px;
+  margin: 6px 0;
+  font-size: 16px;
+  border: none;
+  border-radius: 6px;
+  background: #f0f0f0;
+  color: #0033ff;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.addBookmarkControls button:hover {
+  background: #ddd;
+}
+
+
+/*******************************************************************/
+/* Bookmark List Container & Tabs */
+#bookmarkList-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: white;
+  z-index: 500;
+  display: flex;
+  flex-direction: column; /* Stack tabs on top of list */
+}
+
+.bookmark-tabs {
+  display: flex;
+  width: 100%;
+  height: 50px;
+  background-color: white;
+  flex-shrink: 0; /* Don't let tabs squash */
+}
+
+.tab-btn {
+  flex: 1; /* Each button takes equal space (25%) */
+  border: none;
+  background: none;
+  font-size: 14px;
+  font-weight: bold;
+  cursor: pointer;
+  border-bottom: 3px solid transparent;
+  transition: all 0.2s;
+  -webkit-user-select: none; /* Prevents the text from being highlighted/selected */
+  user-select: none;         /* Prevents the text from being highlighted/selected */
+  -webkit-touch-callout: none;  /* Disables the magnifying glass and system context menu on iOS/Android */
+}
+
+.tab-btn.active {
+  color: #0033ff;
+  border-bottom: 3px solid #0033ff;
+  /*background-color: #e6ecff;*/
+}
+
+/* #bookmarkList style to work with the container */
+#bookmarkList {
+  position: relative !important; /* Change from absolute */
+  flex-grow: 1;
+  width: 100% !important;
+  right: 0 !important;
+  overflow-y: auto;
+  padding: 0; 
+  margin: 0; 
+  /* padding-bottom: 40px; Room for bottom of screen */
+  box-sizing: border-box;
+}
+
+
+/*******************************************************************/
+/* Bookmark List Swipe-to-delete and Drag-to-move styles */
+.swipe-item {
+  position: relative;
+  overflow: hidden;
+  height: 60px; /* Adjusted from 160px for app look */
+  background: white;
+  list-style: none;
+  cursor: pointer;
+  transition: transform 180ms ease, height 0.25s ease;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.swipe-background {
+  position: absolute;
+  inset: 0;
+  background: #ff3b30; /* iOS Red */
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  padding-right: 20px;
+  z-index: 0;
+}
+
+.swipe-background img {
+  width: 35px; 
+  height: 35px; 
+  filter: brightness(0) 
+  invert(1);
+}
+
+.swipe-content {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  cursor: pointer;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  background: white;
+  z-index: 1;
+  border-bottom: 1px solid #eee;
+  transition: transform 0.2s ease-out;
+  font-size: 16px; /* Adjusted from template */
+  touch-action: pan-y; /* Allow vertical scrolling, but we handle horizontal */
+  pointer-events: auto;
+}
+
+.swipe-content:hover {
+  background-color: #f0f0f0;
+}
+
+.icon-group {
+  display: flex;
+  align-items: center;
+  /* This controls the gap specifically between the edit Pencil and the Drag Handle */
+  gap: 16px; 
+}
+
+.drag-handle {
+  width: 24px;
+  height: 24px;
+  cursor: grab;
+  touch-action: none;
+  flex-shrink: 0;
+}
+
+.edit-icon {
+  width: 24px;
+  height: 24px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.drag-handle:active {
+    cursor: grabbing;
+}
+
+.shrinking {
+  height: 0 !important;
+  margin: 0 !important;
+  border: 0 !important;
+  transition: height 0.25s ease;
+}
+
+.swipe-item.dragging {
+  transition: none !important;
+  z-index: 1000;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+}
+
+
+/*******************************************************************/
+/*  Music Player and Import My Songs */
+/*  Music Player overlay (dark transparent background) */
+.musicPlayerOverlay, .importMySongsOverlay, .editMySongsOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  z-index: 500;
+  pointer-events: none; /* No interaction until visible */
+  transition: opacity 0.3s ease;
+}
+
+/* For Tablets and larger (screens taller than 800px) */
+@media (min-height: 800px) {
+.editMySongsOverlay {
+    align-items: flex-start;
+    padding-top: 10vh; /* Move it up only when there is plenty of room */
+  }
+}
+
+.musicPlayerOverlay.show, .importMySongsOverlay.show, .editMySongsOverlay.show {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.musicPlayerControls, .importMySongsControls, .editMySongsControls {
+  background: white;
+  padding: 20px;
+  border: 1px solid #888;
+  box-shadow: 0 0 10px rgba(0,0,0,0.5);
+  transform: scale(0.95);
+  transition: transform 0.3s ease;
+  min-width: 300px;
+  border-radius: 8px;
+  /* Disable the selection of text */
+  -webkit-user-select: none;  /* Safari */
+  -ms-user-select: none;      /* IE 10 and 11 */
+  user-select: none;          /* Standard syntax */
+}
+
+/* IMPORTANT: Re-enable selection for the input field so users can still type/edit */
+.musicPlayerControls input, .importMySongsControls input, .editMySongsControls input {
+  -webkit-user-select: text;
+  -ms-user-select: text;
+  user-select: text;
+}
+
+.musicPlayerOverlay.show .musicPlayerControls {
+  transform: scale(1);
+}
+
+.musicPlayer-buttons {
+  display: flex;
+  justify-content: space-around;
+  margin-top: 15px;
+}
+
+.musicPlayer-buttons button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 5px;
+}
+
+.musicPlayer-buttons svg {
+  width: 32px;
+  height: 32px;
+  /* fill: #333; black */
+  fill: #2563eb; /* main blue */
+  transition: fill 0.2s ease;
+}
+
+.musicPlayer-buttons button:hover:not(:disabled) svg {
+  fill: #1e40af; /* darker blue on hover */
+}
+
+.musicPlayer-buttons button:disabled svg {
+  fill: #bbd7ff; /* very light blue */
+  cursor: not-allowed;
+}
+
+.progress-container {
+  margin-top: 15px;
+}
+
+.progress-time {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+  margin-top: 4px;
+}
+
+input[type=range] {
+  width: 100%;
+}
+
+.audio-filename {
+  margin-top: 10px;
+  text-align: center;
+  min-height: 1.2em; /* Reserve space so layout doesn't jump */
+  color: #222;
+}
+
+
+/*******************************************************************/
+/*  Swipe to Delete Undo toast, Bookmark Folder Delete toast, and Toast */
+#undo-toast, #confirm-toast, #toast {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%);
+  width: 85%;
+  max-width: 500px;
+  padding: 12px 16px;
+  border-radius: 10px;
+  background-color: #333;
+  color: #fff;
+  z-index: 1000;         /* Increased to ensure it's above all lists */
+
+  display: flex;
+  align-items: center;
+  box-sizing: border-box; /* Ensures padding doesn't add to width/height */
+  height: 35px;         /* fixed height for all */
+  
+  font-size: 14px;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease, bottom 0.3s ease, visibility 0.3s ease;
+}
+
+#undo-toast, #confirm-toast {
+  justify-content: space-between;
+}
+
+#undo-toast.show, #confirm-toast.show {
+  visibility: visible;
+  opacity: 1;
+  bottom: 40px; 
+}
+
+#undo-toast button, #confirm-toast button {
+  background: transparent;
+  color: white;
+  border: none;
+  font-family: sans-serif;
+  font-size: 16px;
+  font-weight: bold;
+  text-transform: uppercase;
+  cursor: pointer;
+  padding: 8px 12px;   /* Added padding for a larger hit area */
+}
+
+
+/*******************************************************************/
+/*  Toast message at bottom */
+#toast {
+  justify-content: center; /* Centers the text horizontally in flex */
+  text-align: center;
+}
+
+#toast.show {
+  visibility: visible;
+  opacity: 1;
+  bottom: 40px; /* lift up a little when showing */
+}
+
+
+/*******************************************************************/
+/*  Import My Songs popup */
+/*******************************************************************/
+.popup-title {
+  display: block;
+  text-align: center;
+  margin-bottom: 10px;
+  font-size: 18px;
+  font-weight: bold;
+}
+
+#inputFileName {
+  width: 100%;
+  padding: 10px 5px;
+  font-size: 16px;
+  box-sizing: border-box;
+  border: none;
+  border-bottom: 2px solid #0033ff;
+  outline: none;
+  background: transparent;
+  margin: 1px 0;
+}
+
+/* The Radio Button row */
+.importMySongsRadioButtons {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Radio Button Color */
+.importMySongsRadioButtons input[type="radio"] {
+  accent-color: #0033ff;
+}
+
+.popup-buttons {
+  display: flex;
+  gap: 60px;           /* Adjust this number to your liking */
+  margin-top: 20px;      /* Adjust this for vertical spacing */
+  justify-content: center;
+  width: 100%;
+}
+
+.popup-buttons button {
+  background: none;
+  border: none;
+  padding: 10px 30px; /* Top/Bottom (10px) and Left/Right (30px) */
+  color: #0033ff;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  text-transform: uppercase;
+}
+
+#imagePreview {
+  width: 100%;
+  height: 100%;
+  max-height: 200px;
+  margin: 10px 0;
+  transition: transform 0.2s ease-in-out, width 0.2s, height 0.2s;  /* this makes the rotation smooth taking 0.2 seconds */
+  object-fit: contain;  
+}
+
+.info-row {
+  display: flex;
+  margin-top: 10px;
+  margin-bottom: 5px;
+}
+
+#displayPageNumber, #displayFileSize {
+  font-weight: bold;
+  color: #0033ff; /* Matches your theme blue */
+}
+
+/* This class will be toggled by rotateImage() in JS when rotated */
+.is-portrait__notused {
+  max-width: 150px !important; /* Limit width so it doesn't overlap text when standing up */
+}
+
+.edit-actions button svg {
+  vertical-align: middle;
+  pointer-events: none; /* Ensures the click registers on the button, not the path */
+}
+
+.edit-actions button {
+  color: #0033ff;
+  background: none;
+  border: none;
+  padding: 12px; /* Bigger tap target */
+  cursor: pointer;
+}
+
+.edit-actions button:hover {
+  opacity: 0.7;
+}
+
+/* loading spinner */
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid rgba(0, 51, 255, 0.1);
+  border-left-color: #0033ff; /* Your theme blue */
+  border-radius: 50%;
+  display: inline-block;
+  animation: spin 1s linear infinite;
+}
