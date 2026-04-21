@@ -3106,3 +3106,14 @@ const FIRSTLINE_INDEX = [
 const FIRSTLINE_PAGES = [
 ];
 // end FIRSTLINE_PAGES
+
+
+/////////////////////////////////////////////////////////////////////
+// HELP_PAGES
+const HELP_PAGES = [
+  "help",
+  "help2",
+  "help3",
+  "help4"
+];
+// end HELP_PAGES
