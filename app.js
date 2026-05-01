@@ -892,9 +892,9 @@ addBookmarkMenuOverlay.addEventListener("click", (e) => {
   }
   
   // clicking outside popup also closes
-  //if (e.target === addBookmarkMenuOverlay) {
-  //  addBookmarkMenuOverlay.style.display = "none";
-  //}
+  if (e.target === addBookmarkMenuOverlay) {
+    addBookmarkMenuOverlay.style.display = "none";
+  }
 });
     
 
