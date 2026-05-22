@@ -108,7 +108,7 @@ let swiper = new Swiper(".swiper", {
     speed: 300,            // Faster slide transition animation (was 500)
     touchRatio: 1.5,       // Multiplies physics so the slide moves further than your finger
     threshold: 3,          // Instantly triggers swipe after just 3px of movement
-    longSwipesRatio: 0.1,  // Requires only a tiny 10% distance drag to commit to a page turn
+    longSwipesRatio: 0.15,  // Requires only a tiny 10% distance drag to commit to a page turn
     
     // create the slides
     virtual: {
@@ -732,8 +732,16 @@ let startY = 0;
 
 // Handle longpress on songsheet to show add bookmark popup window
 swiperWrapper.addEventListener('pointerdown', (e) => {
-  if (!e.isPrimary) return; // Ignore multi-touch
-  if (swiper.zoom && swiper.zoom.scale > 1) return; // Ignore when zoomed
+  if (!e.isPrimary) { // Ignore multi-touch
+    clearTimeout(longPressTimer);
+    longPressTimer = null;
+    return;
+  }
+  if (swiper.zoom && swiper.zoom.scale > 1) { // Ignore when zoomed
+    clearTimeout(longPressTimer);
+    longPressTimer = null;
+    return;
+  }
 
   if (e.target.tagName === 'IMG') {
     e.preventDefault();
