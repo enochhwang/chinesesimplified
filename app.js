@@ -226,6 +226,132 @@ swiper.removeAllSlides();
 
 //////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////
+// Handle gestures on songsheets for swipes, short press and long press
+// Gestures not handled here will be handled in the swiper on:click function
+const swiperWrapper = document.querySelector('.swiper-wrapper');
+const addBookmarkMenuOverlay = document.getElementById('addBookmarkMenuOverlay');
+let longPressTimer = null;
+let isLongPressAction = false; // Flag to track if the touch was a long press
+let startX = 0;
+let startY = 0;
+
+// Start of touch event
+swiperWrapper.addEventListener('pointerdown', (e) => {
+  if (!e.isPrimary) { // Ignore multi-touch
+    clearTimeout(longPressTimer);
+    longPressTimer = null;
+    return;
+  }
+  if (swiper.zoom && swiper.zoom.scale > 1) { // Ignore when zoomed
+    clearTimeout(longPressTimer);
+    longPressTimer = null;
+    return;
+  }
+
+  if (e.target.tagName === 'IMG') {
+    e.preventDefault();
+  }
+
+  addBookmarkMenuOverlay.style.display = 'none'; // Hide if already open
+  startX = e.clientX;
+  startY = e.clientY;
+  isLongPressAction = false; // Reset flag on every fresh touch down
+  
+  // Handle longpress on songsheet to show add bookmark popup window
+  // Start the timer for a long press hold
+  longPressTimer = setTimeout(() => {
+    // --- LONG PRESS SONG SHEET ---
+    const index = swiper.activeIndex; // get the current active song index
+    const page = swiper.virtual.slides[index]; // get the page
+    const songname = pages2Index(page);
+    if (songname) {
+      isLongPressAction = true; // mark that a long press occurred
+      addBookmarkMenuOverlay.dataset.songname = songname; // pass songname to the addBookmarkMenuOverlay.addEventListener
+      addBookmarkMenuOverlay.style.display = "flex";  // show Add Bookmark Menu popup window
+      longPressTimer = null;
+      // execution continues with the addBookmarkMenuOverlay.addEventListener click events
+
+    } else {
+      // should never get here
+      console.error("Could not find song title at index:", index, songname);
+    }
+  }, 700); // longpress hold time
+});
+
+// Touch Move (Cancel if swiping) for desktop
+swiperWrapper.addEventListener('pointermove', (e) => {
+  if (longPressTimer) {
+    if (Math.abs(e.clientX - startX) > 5 || Math.abs(e.clientY - startY) > 5) {
+      clearTimeout(longPressTimer);
+      longPressTimer = null;
+    }
+    // turn to next page even with a slight vertical drift/swipe
+    if (Math.abs(e.clientY - startY) > 5) {
+      swiper.slideNext();
+    }
+  }
+});
+
+// Touch Move (Cancel if swiping) for tablet
+swiperWrapper.addEventListener('touchmove', (e) => {
+  if (longPressTimer) {
+    if (Math.abs(e.clientX - startX) > 5 || Math.abs(e.clientY - startY) > 5) {
+      clearTimeout(longPressTimer);
+      longPressTimer = null;
+    }
+    // turn to next page even with a slight vertical drift/swipe
+    if (Math.abs(e.clientY - startY) > 5) {
+      swiper.slideNext();
+    }
+  }
+});
+
+// Touch End (Cancel) / Pointer Up - Handles short tap zone transitions
+swiperWrapper.addEventListener('pointerup', (e) => {
+  if (longPressTimer) {
+    clearTimeout(longPressTimer);
+    longPressTimer = null;    
+    // Note: Short tap action is intentionally bypassed here because 
+    // Swiper's native 'click' callback handler catches it cleanly instead.
+  }
+});
+
+// Global catch-all safety window tracker to kill hanging timers if pointer leaves context
+window.addEventListener('pointercancel', () => {
+  if (longPressTimer) {
+    clearTimeout(longPressTimer);
+    longPressTimer = null;
+  }
+});
+
+// Prevent Default Context Menu
+swiperWrapper.addEventListener('contextmenu', (e) => {
+  e.preventDefault();
+  return false;
+});
+
+// Prevent longpress popup when vertical scroll in landscape mode
+const container = document.querySelector('.songsheet-container');
+container.addEventListener('scroll', () => {
+  if (longPressTimer) {
+    clearTimeout(longPressTimer);
+    longPressTimer = null;
+  }
+}, { passive: true });
+
+// Go back to no zoom (1x) when device orientation change
+window.addEventListener("orientationchange", () => {
+  // Small delay ensures the browser has finished the rotation animation
+  setTimeout(() => {
+    if (swiper.zoom) {
+      swiper.zoom.out();
+    }
+  }, 200);
+});
+    
+
+//////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////
 // Menu bar buttons
 function onMenuPress(id) {
   addBookmarkMenuOverlay.style.display = "none";  // hide the Add Bookmark Menu
@@ -719,130 +845,6 @@ function createFastScroll(sidebarId, listId, dataAttribute, itemsArray) {
   window.addEventListener('touchcancel', stopDragging);
 } // end createFastScroll
 
-
-//////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////
-// Handle gestures for the Add Bookmark menu popup window
-const swiperWrapper = document.querySelector('.swiper-wrapper');
-const addBookmarkMenuOverlay = document.getElementById('addBookmarkMenuOverlay');
-let longPressTimer = null;
-let isLongPressAction = false; // Flag to track if the touch was a long press
-let startX = 0;
-let startY = 0;
-
-// Handle longpress on songsheet to show add bookmark popup window
-swiperWrapper.addEventListener('pointerdown', (e) => {
-  if (!e.isPrimary) { // Ignore multi-touch
-    clearTimeout(longPressTimer);
-    longPressTimer = null;
-    return;
-  }
-  if (swiper.zoom && swiper.zoom.scale > 1) { // Ignore when zoomed
-    clearTimeout(longPressTimer);
-    longPressTimer = null;
-    return;
-  }
-
-  if (e.target.tagName === 'IMG') {
-    e.preventDefault();
-  }
-
-  addBookmarkMenuOverlay.style.display = 'none'; // Hide if already open
-  startX = e.clientX;
-  startY = e.clientY;
-  isLongPressAction = false; // Reset flag on every fresh touch down
-  
-  // Start the timer for a long press hold
-  longPressTimer = setTimeout(() => {
-    // --- LONG PRESS SONG SHEET ---
-    const index = swiper.activeIndex; // get the current active song index
-    const page = swiper.virtual.slides[index]; // get the page
-    const songname = pages2Index(page);
-    if (songname) {
-      isLongPressAction = true; // mark that a long press occurred
-      addBookmarkMenuOverlay.dataset.songname = songname; // pass songname to the addBookmarkMenuOverlay.addEventListener
-      addBookmarkMenuOverlay.style.display = "flex";  // show Add Bookmark Menu popup window
-      longPressTimer = null;
-      // execution continues with the addBookmarkMenuOverlay.addEventListener click events
-
-    } else {
-      // should never get here
-      console.error("Could not find song title at index:", index, songname);
-    }
-  }, 700); // longpress hold time
-});
-
-// Touch Move (Cancel if swiping) for desktop
-swiperWrapper.addEventListener('pointermove', (e) => {
-  if (longPressTimer) {
-    if (Math.abs(e.clientX - startX) > 5 || Math.abs(e.clientY - startY) > 5) {
-      clearTimeout(longPressTimer);
-      longPressTimer = null;
-    }
-    // turn to next page even with a slight vertical drift/swipe
-    if (Math.abs(e.clientY - startY) > 5) {
-      swiper.slideNext();
-    }
-  }
-});
-
-// Touch Move (Cancel if swiping) for tablet
-swiperWrapper.addEventListener('touchmove', (e) => {
-  if (longPressTimer) {
-    if (Math.abs(e.clientX - startX) > 5 || Math.abs(e.clientY - startY) > 5) {
-      clearTimeout(longPressTimer);
-      longPressTimer = null;
-    }
-    // turn to next page even with a slight vertical drift/swipe
-    if (Math.abs(e.clientY - startY) > 5) {
-      swiper.slideNext();
-    }
-  }
-});
-
-// Touch End (Cancel) / Pointer Up - Handles short tap zone transitions
-swiperWrapper.addEventListener('pointerup', (e) => {
-  if (longPressTimer) {
-    clearTimeout(longPressTimer);
-    longPressTimer = null;    
-    // Note: Short tap action is intentionally bypassed here because 
-    // Swiper's native 'click' callback handler catches it cleanly instead.
-  }
-});
-
-// Global catch-all safety window tracker to kill hanging timers if pointer leaves context
-window.addEventListener('pointercancel', () => {
-  if (longPressTimer) {
-    clearTimeout(longPressTimer);
-    longPressTimer = null;
-  }
-});
-
-// Prevent Default Context Menu
-swiperWrapper.addEventListener('contextmenu', (e) => {
-  e.preventDefault();
-  return false;
-});
-
-// Prevent longpress popup when vertical scroll in landscape mode
-const container = document.querySelector('.songsheet-container');
-container.addEventListener('scroll', () => {
-  if (longPressTimer) {
-    clearTimeout(longPressTimer);
-    longPressTimer = null;
-  }
-}, { passive: true });
-
-// Go back to no zoom (1x) when device orientation change
-window.addEventListener("orientationchange", () => {
-  // Small delay ensures the browser has finished the rotation animation
-  setTimeout(() => {
-    if (swiper.zoom) {
-      swiper.zoom.out();
-    }
-  }, 200);
-});
-    
 
 //////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////
